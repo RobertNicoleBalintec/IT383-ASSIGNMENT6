@@ -5,6 +5,6 @@
     {% csrf_token %}
     {{ form.as_p }}
     <button type="submit" class="btn">Save</button>
-    <a href="{% if object %}{% url 'album_detail' object.pk %}{% else %}{% url 'album_list' %}{% endif %}" class="btn btn-danger">Cancel</a>
+    <a href="{% if object %}{% url 'gallery:album_detail' object.pk %}{% else %}{% url 'gallery:album_list' %}{% endif %}" class="btn btn-danger">Cancel</a>
 </form>
 {% endblock %}
