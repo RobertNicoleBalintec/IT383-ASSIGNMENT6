@@ -1,0 +1,10 @@
+{% extends 'gallery/base.html' %}
+{% block content %}
+<h1>Delete Photo</h1>
+<p>Are you sure you want to delete "<strong>{{ object.caption|default:'this photo' }}</strong>"?</p>
+<form method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger">Yes, delete</button>
+    <a href="{% url 'album_detail' object.album.pk %}" class="btn">Cancel</a>
+</form>
+{% endblock %}

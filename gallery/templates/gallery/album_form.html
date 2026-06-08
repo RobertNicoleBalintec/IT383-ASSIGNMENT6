@@ -1,0 +1,10 @@
+{% extends 'gallery/base.html' %}
+{% block content %}
+<h1>{% if object %}Edit Album{% else %}Create Album{% endif %}</h1>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn">Save</button>
+    <a href="{% if object %}{% url 'album_detail' object.pk %}{% else %}{% url 'album_list' %}{% endif %}" class="btn btn-danger">Cancel</a>
+</form>
+{% endblock %}

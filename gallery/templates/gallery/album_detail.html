@@ -1,0 +1,33 @@
+{% extends 'gallery/base.html' %}
+{% block content %}
+<h1>{{ album.title }}</h1>
+<p>{{ album.description }}</p>
+<p>Owner: {{ album.owner.username }} | Created: {{ album.created_at|date:"M d, Y" }}</p>
+
+{% if user == album.owner %}
+    <div style="margin: 15px 0;">
+        <a href="{% url 'album_update' album.pk %}" class="btn">Edit Album</a>
+        <a href="{% url 'album_delete' album.pk %}" class="btn btn-danger">Delete Album</a>
+        <a href="{% url 'photo_create' album.pk %}" class="btn">Upload Photo</a>
+    </div>
+{% endif %}
+
+<div class="photo-grid">
+    {% for photo in album.photos.all %}
+        <div class="photo-card">
+            <img src="{{ photo.image.url }}" alt="{{ photo.caption }}">
+            <p>{{ photo.caption }}</p>
+            <small>Uploaded by {{ photo.uploaded_by.username }}</small>
+            {% if user == album.owner %}
+                <div style="margin-top: 10px;">
+                    <a href="{% url 'photo_update' photo.pk %}" class="btn btn-sm">Edit</a>
+                    <a href="{% url 'photo_delete' photo.pk %}" class="btn btn-danger btn-sm">Delete</a>
+                </div>
+            {% endif %}
+        </div>
+    {% empty %}
+        <p>No photos in this album yet. {% if user == album.owner %}<a href="{% url 'photo_create' album.pk %}">Upload the first photo</a>{% endif %}</p>
+    {% endfor %}
+</div>
+<p><a href="{% url 'album_list' %}">← Back to all albums</a></p>
+{% endblock %}

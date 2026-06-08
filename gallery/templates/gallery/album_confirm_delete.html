@@ -1,0 +1,10 @@
+{% extends 'gallery/base.html' %}
+{% block content %}
+<h1>Delete Album</h1>
+<p>Are you sure you want to delete the album <strong>"{{ album.title }}"</strong>? This will also delete all photos inside it.</p>
+<form method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger">Yes, delete</button>
+    <a href="{% url 'album_detail' album.pk %}" class="btn">Cancel</a>
+</form>
+{% endblock %}

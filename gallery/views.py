@@ -1,70 +1,90 @@
-from django.shortcuts import render, redirect, get_object_or_404
-from django.core.paginator import Paginator
-from .models import RecipePhoto
-from .forms import RecipePhotoForm
-from django.db.models import Q
-from django.contrib import messages
-import cloudinary.uploader
-# Create your views here.
-def gallery_view(request):
-    query = request.GET.get('q', '')
-    if query:
-        photo_list = RecipePhoto.objects.filter(
-            Q(title__icontains=query) |
-            Q(description__icontains=query)
-        ).order_by('-uploaded_at')
-    else:
-        photo_list = RecipePhoto.objects.all().order_by('-uploaded_at')
-    
-    paginator = Paginator(photo_list, 2)
-    page_number = request.GET.get('page')
-    photos = paginator.get_page(page_number)
+from django.shortcuts import get_object_or_404, redirect
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.urls import reverse_lazy
+from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
+from .models import Album, Photo
+from .forms import AlbumForm, PhotoForm
 
-    if request.method == 'POST':
-        form = RecipePhotoForm(request.POST, request.FILES)
-        if form.is_valid():
-            form.save()
-            return redirect('gallery_home')
-    else:
-        form = RecipePhotoForm()
-    
-    return render(request, 'gallery/home.html', {
-        'form': form,
-        'photos': photos,
-        'query': query,
-    })
+class AlbumListView(ListView):
+    model = Album
+    template_name = 'gallery/album_list.html'
+    context_object_name = 'albums'
 
-def edit_recipe(request, pk):
-    photo = get_object_or_404(RecipePhoto, pk=pk)
+class AlbumDetailView(DetailView):
+    model = Album
+    template_name = 'gallery/album_detail.html'
+    context_object_name = 'album'
 
-    if request.method == 'POST':
-        # Pass the existing instance to the form so it knows to UPDATE, not create
-        form = RecipePhotoForm(request.POST, request.FILES, instance=photo)
-        if form.is_valid():
-            form.save()
-            messages.success(request, f"'{photo.title}' updated successfully!")
-            return redirect('gallery_home')
-    else:
-        # Pre-fill the form with the existing data
-        form = RecipePhotoForm(instance=photo)
-        
-    return render(request, 'gallery/edit.html', {'form': form, 'photo': photo})
+class AlbumCreateView(LoginRequiredMixin, CreateView):
+    model = Album
+    form_class = AlbumForm
+    template_name = 'gallery/album_form.html'
+    success_url = reverse_lazy('album_list')
 
-def delete_recipe(request, pk):
-    photo = get_object_or_404(RecipePhoto, pk=pk)
-    
-    if request.method == 'POST':
-        title = photo.title
+    def form_valid(self, form):
+        form.instance.owner = self.request.user
+        return super().form_valid(form)
 
-        if photo.image:
-            try:
-                # Tell Cloudinary to permanently delete the file from their servers
-                cloudinary.uploader.destroy(photo.image.public_id)
-            except Exception as e:
-                print(f"Cloudinary deletion failed: {e}")
+class AlbumUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+    model = Album
+    form_class = AlbumForm
+    template_name = 'gallery/album_form.html'
 
-        photo.delete()
-        messages.success(request, f"'{title}' was completely deleted.")
-        return redirect('gallery_home')
-    
-    return render(request, 'gallery/delete.html', {'photo': photo})
+    def test_func(self):
+        return self.get_object().owner == self.request.user
+
+    def get_success_url(self):
+        return reverse_lazy('album_detail', kwargs={'pk': self.object.pk})
+
+class AlbumDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    model = Album
+    template_name = 'gallery/album_confirm_delete.html'
+    success_url = reverse_lazy('album_list')
+
+    def test_func(self):
+        return self.get_object().owner == self.request.user
+
+class PhotoCreateView(LoginRequiredMixin, CreateView):
+    model = Photo
+    form_class = PhotoForm
+    template_name = 'gallery/photo_form.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        self.album = get_object_or_404(Album, pk=kwargs['album_pk'])
+        if self.album.owner != request.user:
+            return redirect('album_detail', pk=self.album.pk)
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['album'] = self.album
+        return context
+
+    def form_valid(self, form):
+        form.instance.album = self.album
+        form.instance.uploaded_by = self.request.user
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return reverse_lazy('album_detail', kwargs={'pk': self.album.pk})
+
+class PhotoUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+    model = Photo
+    form_class = PhotoForm
+    template_name = 'gallery/photo_form.html'
+
+    def test_func(self):
+        return self.get_object().album.owner == self.request.user
+
+    def get_success_url(self):
+        return reverse_lazy('album_detail', kwargs={'pk': self.object.album.pk})
+
+class PhotoDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    model = Photo
+    template_name = 'gallery/photo_confirm_delete.html'
+
+    def test_func(self):
+        return self.get_object().album.owner == self.request.user
+
+    def get_success_url(self):
+        return reverse_lazy('album_detail', kwargs={'pk': self.object.album.pk})

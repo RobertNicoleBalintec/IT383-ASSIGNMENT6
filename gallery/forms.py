@@ -1,12 +1,12 @@
 from django import forms
-from .models import RecipePhoto
+from .models import Album, Photo
 
-class RecipePhotoForm(forms.ModelForm):
+class AlbumForm(forms.ModelForm):
     class Meta:
-        model = RecipePhoto
-        fields = ['title', 'description', 'image']
-        widgets = {
-            'title': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'E.g., Spicy Tacos'}),
-            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
-            'image': forms.FileInput(attrs={'class': 'form-control'}),
-        }
+        model = Album
+        fields = ['title', 'description']
+
+class PhotoForm(forms.ModelForm):
+    class Meta:
+        model = Photo
+        fields = ['image', 'caption']

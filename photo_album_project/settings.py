@@ -80,7 +80,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'recipe_project.urls'
+ROOT_URLCONF = 'photo_album_project.urls'
 
 TEMPLATES = [
     {
@@ -97,7 +97,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'recipe_project.wsgi.application'
+WSGI_APPLICATION = 'photo_album_project.wsgi.application'
 
 
 # Database
